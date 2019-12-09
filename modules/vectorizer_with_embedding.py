@@ -3,7 +3,7 @@ from .vocabulary import Vocabulary,SequenceVocabulary
 import numpy as np
 import string
 import nltk
-from nltk.tokenize import TweetTokenizer
+from keras.preprocessing.text import Tokenizer
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 
@@ -24,10 +24,23 @@ class VectorizerWithEmbedding(object):
     def __init__(self, claim_ev_vocab, labels_vocab):
         self.claim_ev_vocab = claim_ev_vocab
         self.label_vocab = labels_vocab
+        self.tokenizer=None
 
-    def tokenize(self, sentence):
-        tknzr = TweetTokenizer()
-        return tknzr.tokenize(sentence)
+
+    @classmethod
+    def tokenize(self, data_df, tk):
+        sentence_split=tk.texts_to_sequences(data_df.Tweet)
+        return sentence_split
+
+    @classmethod
+    def create_tokenizer(self):
+        tk = Tokenizer(num_words=None, char_level=True, oov_token='UNK')
+        return tk
+
+    @classmethod
+    def get_tokenizer(self):
+        return self.tokenizer
+
 
     def vectorize(self, input_sentence, vector_length=-1):
         """
@@ -37,28 +50,25 @@ class VectorizerWithEmbedding(object):
         Returns:
             the vetorized title (numpy.array)
         """
-        indices = [self.claim_ev_vocab.begin_seq_index]
-        input_sentence_split=self.tokenize(input_sentence)
-        for token in input_sentence_split:
-            index=self.claim_ev_vocab.lookup_token(token)
-            indices.append(index)
-
-
-        indices.append(self.claim_ev_vocab.end_seq_index)
+        tk=self.get_tokenizer()
+        alll_indices=self.tokenize(input_sentence,tk)
 
         #if we have not found or are providing the length of the input with maximum length.
         if vector_length < 0:
-            vector_length = len(indices)
+            vector_length = len(alll_indices)
 
-        out_vector = np.zeros(vector_length, dtype=np.int64)
-        out_vector[:len(indices)] = indices
-        out_vector[len(indices):] = self.claim_ev_vocab.mask_index
+        padded_sequences=[]
+        for each_sent in alll_indices:
+            out_vector = np.zeros(vector_length, dtype=np.int64)
+            out_vector[:len(each_sent)] = each_sent
+            out_vector[len(each_sent):] = self.claim_ev_vocab.mask_index
+            padded_sequences.append(out_vector)
 
-        return out_vector
+        return padded_sequences
 
     @classmethod
-    def update_word_count(cls,input_sentence,word_counts):
-        input_sentence_split = cls.tokenize(cls,input_sentence)
+    def update_word_count(cls,input_sentence,word_counts,tk):
+        input_sentence_split = cls.tokenize(input_sentence,tk)
         for word in input_sentence_split:
                 word_counts[word] += 1
         return word_counts
@@ -77,13 +87,20 @@ class VectorizerWithEmbedding(object):
 
         tweet_vocab = SequenceVocabulary()
         word_counts = Counter()
-        for tweet in (train_data.Tweet):
-            word_counts=cls.update_word_count(tweet,word_counts)
+        tk=cls.create_tokenizer()
 
-        for tweet in (dev_data.Tweet):
-            word_counts=cls.update_word_count(tweet,word_counts)
+        tk.fit_on_texts(train_data.Tweet)
+        tk.fit_on_texts(dev_data.Tweet)
+        cls.tokenizer = tk
 
-        for word, count in word_counts.items():
+        # for tweet in (train_data.Tweet):
+        #     word_counts=cls.update_word_count(tweet,word_counts,tk)
+        #
+        # for tweet in (dev_data.Tweet):
+        #     word_counts=cls.update_word_count(tweet,word_counts)
+        #
+
+        for word in tk.word_index.keys():
                 tweet_vocab.add_token(word)
 
         emotions = ["anger", "anticipation", "disgust", "fear", "joy", "love",

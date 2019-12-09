@@ -10,18 +10,17 @@ import pandas as pd
 import random
 from tqdm import tqdm
 import emoji
-from nltk.tokenize import TweetTokenizer
-
+from keras.preprocessing.text import Tokenizer
 
 
 class TwitterDataset():
-    def __init__(self, combined_train_dev_test_with_split_column_df, vectorizer):
+    def __init__(self, combined_train_dev_test_with_split_column_df, vectorizer,tokenizer):
         """
         Args:
             combined_train_dev_test_with_split_column_df (pandas.DataFrame): the dataset
             vectorizer (VectorizerWithEmbedding): vectorizer instantiated from dataset
         """
-        self._max_claim_length = self.calculate_max_length(combined_train_dev_test_with_split_column_df)+2
+        self._max_claim_length = self.calculate_max_length(combined_train_dev_test_with_split_column_df,tokenizer)+2
 
 
         self.review_df = combined_train_dev_test_with_split_column_df
@@ -44,18 +43,18 @@ class TwitterDataset():
 
         self._labels = self.train_df[emotions].values
 
-    def tokenize(self, sentence):
-        tknzr = TweetTokenizer()
-        return tknzr.tokenize(sentence)
 
-    def calculate_max_length(self,data_df):
+
+
+    def calculate_max_length(self,data_df,tk):
         '''
         Find the length of the data point with maximum length.
         :return:
         '''
         max_length=0
-        for x,row in data_df.iterrows():
-            current_length=len(self.tokenize(row.Tweet))
+        train_sequences = tk.texts_to_sequences(data_df.Tweet)
+        for row in train_sequences:
+            current_length=len(row)
             if current_length>max_length:
                 max_length=current_length
         return max_length
@@ -81,7 +80,7 @@ class TwitterDataset():
         frames = [train_df, dev_df]
         combined_train_dev_test_with_split_column_df = pd.concat(frames)
 
-        return cls(combined_train_dev_test_with_split_column_df, VectorizerWithEmbedding.create_vocabulary(train_df,dev_df, args.frequency_cutoff))
+        return cls(combined_train_dev_test_with_split_column_df, VectorizerWithEmbedding.create_vocabulary(train_df,dev_df, args.frequency_cutoff),VectorizerWithEmbedding.get_tokenizer())
 
     @classmethod
     def load_vectorizer(cls, input_file, vectorizer_filepath):
