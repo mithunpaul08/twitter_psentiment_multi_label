@@ -24,6 +24,7 @@ class Initializer():
             # Training hyper parameters
             batch_size=32,
             early_stopping_criteria=5,
+            learning_rate=0.005,
             seed=256,
             random_seed=20,
             weight_decay=5e-5,
@@ -67,9 +68,8 @@ class Initializer():
     def create_parser(self):
 
         parser = argparse.ArgumentParser(description='PyTorch Mean-Teacher Training')
-        parser.add_argument("--train", nargs='?', default="2018-E-c-En-train.txt")
-        parser.add_argument("--dev", nargs='?', default="2018-E-c-En-dev.txt")
-        parser.add_argument("--test", nargs='?', default="2018-E-c-En-test.txt")
+        parser.add_argument("train", nargs='?', default="2018-E-c-En-train.txt")
+        parser.add_argument("dev", nargs='?', default="2018-E-c-En-dev.txt")
         parser.add_argument("test_for_hacking", nargs='?', default="2018-E-c-En-dev_for_hacking.txt")
         parser.add_argument('--reload_from_files', default=False, type=self.str2bool, metavar='BOOL',
                             help='use a saved model and vectorizer')
@@ -77,10 +77,8 @@ class Initializer():
                             help='no of epochs to run for')
         parser.add_argument('--threshold_prediction', default=0.5, type=float,
                             help='the threshold above which the sigmoid output will be 1, else 0')
-        parser.add_argument('--learning_rate', default=0.00001, type=float,
+        parser.add_argument('--learning_rate', default=0.1, type=float,
                             help='starting learning rate')
-        parser.add_argument('--patience', default=5, type=float,
-                            help='patience for early stopping')
         return parser
 
     def parse_commandline_args(self):

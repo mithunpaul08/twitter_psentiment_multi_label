@@ -8,3 +8,6 @@ pip3 install sklearn
 pip3 install tqdm
 mkdir -p saved/
 pip install nltk
+pip install keras-self-attention
+pip install emoji
+pip install flair

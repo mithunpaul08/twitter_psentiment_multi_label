@@ -182,21 +182,51 @@ python nn.py
     - [this](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8244338) is a 2019 paper.use cnn+max pooling
     - NRC10 is the name of the dataset. [this](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=7817108) is an example of multilabel classification
     - [these](https://arxiv.org/pdf/1803.11509.pdf) guys use a combination of character and word embeddings
-- uncomment if word not in string.punctuation:
+
 - add comet? **---done**
-- increase hidden lstm to 1024. update: got 0.43 instead . have to revert back
-- try threshold=0.3 (update: accuracy 0.48 )
+- increase hidden lstm to 1024. update: got 0.43 instead . removed.
 - add tokenizer split everywhere (update: accuracy: 0.481)
-- try threshold=0.2 (update: accuracy:0.472)
+- try threshold=0.2 (update: accuracy:0.472)-ignored
 - try threshold=0.3  again (update: accuracy:0.516)
-- try threshold=0.4 (update: accuracy: 0.491)
-- try threshold=0.5 (update: accuracy: )
+- try threshold=0.4 (update: accuracy: 0.491)-ignored
+- try threshold=0.5 (update: accuracy: 0.468) - so stick to 0.3
+- remove stop words (update: accuracy:0.509) -weird. removed stop word removal
+- add intra sentence attention.  
+    - a list is given [here](https://pypi.org/project/keras-self-attention/)
+    - done. code is based on [this](https://www.kaggle.com/arcisad/keras-bidirectional-lstm-self-attention) blog 
+    page but a good picture representation will like this given [here](https://androidkt.com/text-classification-using-attention-mechanism-in-keras/)
+    - try global attention:(.481) -weird.-ignored
+    - try local attention:+10 width (0.486) -ignored
+    - try local attention:+5 width (0.497)-ignored
+    - try local attention:+15 width-ignored
+    - try multiplicative attention+window width=15 (0.499)
+    - try regularizer (0.493) -removing regularizer
+    - pick the best attention so far and tune the width
+        - multiplicative+window width=10 (0.489)
+        - multiplicative+window width=60 (0.499)--picking this
+    - else if attention doesn't cross 0.516, drop it. (update: maybe not. I don't want to really give away the attention
+    i think it'll do fine once character embeddings come in..maybe)
+- split hashtags #happy -happy, then will have more signal (0.413)- wow. apparently that was a really bad idea.- removed it
+- remove punctuations (0.460)--bad idea. ignored/removed
+- run again without emoji
+- add flair embeddings
+    - [here](https://lekonard.github.io/blog/how-to-use-flair-with-keras/) is a tutorial on merging flair with keras and [here](https://github.com/zalandoresearch/flair/issues/987) is 
+    a github issue/qn where they talk about how to merge flair with keras..i didnt completely understand that though.
+    - read the basic flair embedding [tutorial](https://github.com/zalandoresearch/flair/blob/master/resources/docs/TUTORIAL_3_WORD_EMBEDDING.md)
+    - and the [list]((https://github.com/zalandoresearch/flair/blob/master/resources/docs/TUTORIAL_4_ELMO_BERT_FLAIR_EMBEDDING.md)) of all flair supported embeddings
+    - twitter one is in [this](https://github.com/zalandoresearch/flair/blob/5f9f539788268c16848b45f44fd39edd0bc5b71f/resources/docs/embeddings/CLASSIC_WORD_EMBEDDINGS.md) page though
+    page
+    - try flair+twitter
+    - flair+elmo
+    - flair+bert
 
-- remove stop words (already pushed. don't do git pull until you finish threshold tuning)
-- add intra sentence attention. a list is given [here](https://pypi.org/project/keras-self-attention/)
-- remove punctuations
-- add character embeddings-plain
+- convert smileys to corresponding adjectives. (0.370)- very useless
+    - finally found [demoji](https://pypi.org/project/demoji/)
 
+- remove sequence vocabulary. i.e dont use start and end of a sentence.
+- add dropout 0.2
+- what is the effect of a simple return_sequences=True without attention?
+- add character embeddings-plain (i think a character level embedding + attention on it, might do wonders..)
 - add character embeddings- elmo
 - tune threshold prediction
 - set trainable=True/update embeddings
@@ -204,3 +234,4 @@ python nn.py
 - add word freq cut off    
 - add bert
 - update embeddings==true-trainable=False))
+- delete later the flair embeddings from: /var/folders/47/jzjxjfb11v55qr2nhz_nxt800000gn/T/tmpms_xft2r

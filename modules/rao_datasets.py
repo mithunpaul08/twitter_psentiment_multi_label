@@ -9,6 +9,9 @@ from  .vectorizer_with_embedding import VectorizerWithEmbedding
 import pandas as pd
 import random
 from tqdm import tqdm
+import emoji
+from nltk.tokenize import TweetTokenizer
+
 
 
 class TwitterDataset():
@@ -18,9 +21,8 @@ class TwitterDataset():
             combined_train_dev_test_with_split_column_df (pandas.DataFrame): the dataset
             vectorizer (VectorizerWithEmbedding): vectorizer instantiated from dataset
         """
-        # +1 if only using begin_seq, +2 if using both begin and end seq tokens
-        measure_len = lambda context: len(context.split(" "))
-        self._max_claim_length = max(map(measure_len, combined_train_dev_test_with_split_column_df.Tweet)) + 2
+        self._max_claim_length = self.calculate_max_length(combined_train_dev_test_with_split_column_df)+2
+
 
         self.review_df = combined_train_dev_test_with_split_column_df
         self._vectorizer = vectorizer
@@ -31,13 +33,9 @@ class TwitterDataset():
         self.val_df = self.review_df[self.review_df.split == 'val']
         self.validation_size = len(self.val_df)
 
-        self.test_df = self.review_df[self.review_df.split == 'test']
-        self.test_size = len(self.test_df)
 
         self._lookup_dict = {'train': (self.train_df, self.train_size),
-                             'val': (self.val_df, self.validation_size),
-                             'test': (self.test_df, self.test_size)
-                             }
+                             'val': (self.val_df, self.validation_size)}
 
         self.set_split('train')
 
@@ -46,31 +44,21 @@ class TwitterDataset():
 
         self._labels = self.train_df[emotions].values
 
+    def tokenize(self, sentence):
+        tknzr = TweetTokenizer()
+        return tknzr.tokenize(sentence)
 
-
-    # @classmethod
-    # def truncate_words(cls,sent, tr_len):
-    #     sent_split = sent.split(" ")
-    #     if (len(sent_split) > tr_len):
-    #         sent_tr = sent_split[:1000]
-    #         sent_output = " ".join(sent_tr)
-    #         return sent_output
-    #     else:
-    #         return sent
-
-    @classmethod
-    def truncate_data(cls,data_dataframe, tr_len):
+    def calculate_max_length(self,data_df):
         '''
-        #the data has lots of junk values. Truncate/cut short evidence/claim sentneces if they are more than tr_length
-        :param data_dataframe:
-        :param tr_len:
-        :param args:
-        :return: modified pandas dataframe
+        Find the length of the data point with maximum length.
+        :return:
         '''
-        data_count=len(data_dataframe)
-        for i, row in tqdm(data_dataframe.iterrows(),total=data_count,desc="truncate_data"):
-            row.Tweet= cls.truncate_words(row.Tweet, tr_len)
-        return data_dataframe
+        max_length=0
+        for x,row in data_df.iterrows():
+            current_length=len(self.tokenize(row.Tweet))
+            if current_length>max_length:
+                max_length=current_length
+        return max_length
 
 
     @classmethod
@@ -84,19 +72,13 @@ class TwitterDataset():
         """
 
         train_df = pd.read_csv(args.train, **read_csv_kwargs)
-        #train_df=cls.truncate_data(train_data, args.truncate_words_length)
         train_df['split'] = "train"
 
         dev_df = pd.read_csv(args.dev, **read_csv_kwargs)
-        #dev_df = cls.truncate_data(dev_data, args.truncate_words_length)
         dev_df['split'] = "val"
 
-        test_df = pd.read_csv(args.test, **read_csv_kwargs)
-        # dev_df = cls.truncate_data(dev_data, args.truncate_words_length)
-        test_df['split'] = "test"
 
-
-        frames = [train_df, dev_df,test_df]
+        frames = [train_df, dev_df]
         combined_train_dev_test_with_split_column_df = pd.concat(frames)
 
         return cls(combined_train_dev_test_with_split_column_df, VectorizerWithEmbedding.create_vocabulary(train_df,dev_df, args.frequency_cutoff))

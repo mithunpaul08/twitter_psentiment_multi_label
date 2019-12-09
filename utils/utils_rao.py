@@ -4,6 +4,7 @@ import re
 import mmap
 from tqdm import tqdm
 import math
+from flair.embeddings import WordEmbeddings, StackedEmbeddings, BertEmbeddings
 
 '''
 adapted from:https://github.com/joosthub/PyTorchNLPBook
@@ -57,7 +58,7 @@ def load_glove_from_file(glove_filepath):
     return word_to_index, np.stack(embeddings)
 
 
-def make_embedding_matrix(glove_filepath, words):
+def make_embedding_matrix_with_glove(glove_filepath, words):
     """
     Create embedding matrix for a specific set of words.
 
@@ -66,6 +67,32 @@ def make_embedding_matrix(glove_filepath, words):
         words (list): list of words in the dataset
     """
 
+    word_to_idx, glove_embeddings = load_glove_from_file(glove_filepath)
+    embedding_size = glove_embeddings.shape[1]
+
+    final_embeddings = np.zeros((len(words), embedding_size))
+
+    for i, word in enumerate(words):
+        if word in word_to_idx:
+            final_embeddings[i, :] = glove_embeddings[word_to_idx[word]]
+        else:
+            #if word is not present use xavier-glorot to randomly initialize its embedding
+            embedding_i = np.random.randn(1, embedding_size) / np.sqrt(embedding_size)
+            final_embeddings[i, :] = embedding_i
+
+    return final_embeddings,embedding_size
+
+def make_embedding_matrix_with_flair(filepath, words):
+    """
+    Create embedding matrix for a specific set of words.
+
+    Args:
+        glove_filepath (str): file path to the glove embeddigns
+        words (list): list of words in the dataset
+    """
+
+    # stacked_embedding = StackedEmbeddings([WordEmbeddings('en'),
+    #                                        BertEmbeddings('bert-base-uncased')])
     word_to_idx, glove_embeddings = load_glove_from_file(glove_filepath)
     embedding_size = glove_embeddings.shape[1]
 

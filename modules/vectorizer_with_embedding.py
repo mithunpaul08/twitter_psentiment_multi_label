@@ -57,10 +57,9 @@ class VectorizerWithEmbedding(object):
         return out_vector
 
     @classmethod
-    def update_word_count(cls,sentence,word_counts):
-        input_sentence_split = cls.tokenize(cls,sentence)
+    def update_word_count(cls,input_sentence,word_counts):
+        input_sentence_split = cls.tokenize(cls,input_sentence)
         for word in input_sentence_split:
-            if not word in stop_words:
                 word_counts[word] += 1
         return word_counts
 
